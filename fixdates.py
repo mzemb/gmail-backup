@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import re
@@ -36,27 +37,7 @@ def get_message_ctime(d):
     return message_ctime
 
 
-try:
-    with open(LAST_DATE_FIXED_FILENAME) as f:
-        last_file_int_fixed = int(f.read().strip())
-except:
-    last_file_int_fixed = -1
-
-
-EMAIL_NUMBERS = []
-for fname in os.listdir("."):
-    m = FILE_RE.match(fname)
-    if m:
-        file_int = int(m.group(1))
-        if file_int > last_file_int_fixed:
-            EMAIL_NUMBERS.append(int(m.group(1)))
-
-
-EMAIL_NUMBERS.sort()
-for i, file_int in enumerate(EMAIL_NUMBERS):
-    fname = str(file_int) + ".eml"
-    print "(%d of %d) %s" % (i + 1, len(EMAIL_NUMBERS), fname)
-
+def update_file_time(fname):
     with open(fname) as f:
         file_contents = f.read()
     message = email.message_from_string(file_contents)
@@ -64,7 +45,46 @@ for i, file_int in enumerate(EMAIL_NUMBERS):
     if message_ctime:
         os.utime(fname, (message_ctime, message_ctime))
 
-if EMAIL_NUMBERS:
+
+def read_last_file():
+    try:
+        with open(LAST_DATE_FIXED_FILENAME) as f:
+            last_file_int_fixed = int(f.read().strip())
+    except:
+        last_file_int_fixed = -1
+    return last_file_int_fixed
+
+
+def write_last_file(last):
     f = open(LAST_DATE_FIXED_FILENAME, 'w')
-    f.write(str(EMAIL_NUMBERS[-1]))
+    f.write(str(last))
     f.close()
+
+
+def load_file_to_handle(last_file_int_fixed):
+    emails = []
+    for fname in os.listdir("."):
+        m = FILE_RE.match(fname)
+        if m:
+            file_int = int(m.group(1))
+            if file_int > last_file_int_fixed:
+                emails.append([int(m.group(1)), fname])
+
+    emails.sort()
+    return emails
+
+
+def main():
+    last_file_int_fixed = read_last_file()
+
+    emails = load_file_to_handle(last_file_int_fixed)
+
+    for i, (file_int, fname) in enumerate(emails):
+        print "(%d of %d) %s" % (i + 1, len(emails), fname)
+        update_file_time(fname)
+
+    if emails:
+        write_last_file(emails[-1][0])
+
+if __name__ == '__main__':
+    main()
