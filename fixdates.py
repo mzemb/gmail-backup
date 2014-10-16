@@ -66,12 +66,14 @@ def write_last_file(last):
 
 def load_file_to_handle(last_file_int_fixed):
     emails = []
-    for fname in os.listdir("."):
-        m = FILE_RE.match(fname)
-        if m:
-            file_int = int(m.group(1))
-            if file_int > last_file_int_fixed:
-                emails.append([int(m.group(1)), fname])
+    for dir, _, fnames in os.walk("."):
+        for fname in fnames:
+            path = os.path.join(dir, fname)
+            m = FILE_RE.match(fname)
+            if m:
+                file_int = int(m.group(1))
+                if file_int > last_file_int_fixed:
+                    emails.append([int(m.group(1)), path])
 
     emails.sort()
     return emails
