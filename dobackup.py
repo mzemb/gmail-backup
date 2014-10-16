@@ -58,6 +58,8 @@ def get_credentials():
     except:
         user = raw_input("Gmail address: ")
         pwd = getpass.getpass("Gmail password: ")
+        with open('account.conf', 'w') as f:
+            f.write('%s %s' % (user, pwd))
     return user, pwd
 
 
