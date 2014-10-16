@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import email
 import getpass
 import imaplib
 import os
 import re
 import time
 
-from fix import get_message_ctime, update_file_time
+from fix import fix_large_duplication, get_message_ctime, update_file_time, \
+    write_hash_data
 
 LAST_ID_FILE = 'last_fetched_id.dat'
 
@@ -40,7 +42,8 @@ def downloadMessage(svr, n, uid):
         raise Exception("Bad response: %s %s" % (resp, lst))
     content = lst[0][1]
 
-    ctime = get_message_ctime(content)
+    message = email.message_from_string(content)
+    ctime = get_message_ctime(message)
     fname = get_filename_by_date(uid, ctime)
     dir = os.path.dirname(fname)
     if not os.path.exists(dir):
@@ -50,6 +53,8 @@ def downloadMessage(svr, n, uid):
         f.write(content)
     if ctime:
         update_file_time(fname, ctime)
+
+    fix_large_duplication(fname, message)
 
 
 def UIDFromFilename(fname):
@@ -113,6 +118,7 @@ def do_backup():
         downloadMessage(svr, i, uid)
         write_last_id(uid)
 
+    write_hash_data()
     svr.close()
     svr.logout()
 

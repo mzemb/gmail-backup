@@ -5,16 +5,19 @@ import calendar
 import datetime
 import email
 import email.utils
+import hashlib
 import os
 import re
 import time
 
 FILE_RE = re.compile(r"(\d+).eml$")
 LAST_DATE_FIXED_FILENAME = "last_email_fixed.dat"
+LARGE_FILE_SIZE = 100000  # 100K
+LAST_HASH_FILENAME = "last_hash.dat"
+SEEN_HASH = {}
 
 
-def get_message_ctime(content):
-    message = email.message_from_string(content)
+def get_message_ctime(message):
     ctime = message['date']
     d = ctime
     dt_src = email.utils.parsedate_tz(d)
@@ -38,17 +41,69 @@ def get_message_ctime(content):
     return message_ctime
 
 
+def fix_file_ctime(fname, message):
+    message_ctime = get_message_ctime(message)
+    if message_ctime:
+        update_file_time(fname, message_ctime)
+    return message_ctime
+
+
+def fix_file_name(uid, fname, message, ctime):
+    from dobackup import get_filename_by_date
+    archive_path = get_filename_by_date(uid, ctime)
+    if not fname.endswith(archive_path):
+        os.renames(fname, archive_path)
+        return archive_path
+    return fname
+
+
+def read_hash_data():
+    try:
+        content = open(LAST_HASH_FILENAME).read()
+        return {line.split(1) for line in content.split('\n')}
+    except:
+        return {}
+
+SEEN_HASH = read_hash_data()
+
+
+def write_hash_data():
+    with open(LAST_HASH_FILENAME, 'w') as f:
+        f.write('\n'.join('%s %s' % (hash, SEEN_HASH[hash])
+                          for hash in sorted(SEEN_HASH.keys())))
+
+
+def fix_large_duplication(fname, message):
+    changed = False
+    for part in message.walk():
+        if part.get_filename():
+            content = part.get_payload()
+            size = len(content)
+            if size > LARGE_FILE_SIZE:
+                hash = hashlib.md5(content).hexdigest()
+                if hash not in SEEN_HASH:
+                    SEEN_HASH[hash] = fname
+                else:
+                    origin_file = SEEN_HASH[hash]
+                    part.set_payload('duplication removed, origin: %s' %
+                                     origin_file)
+                    with open(fname, 'w') as f:
+                        f.write(message.as_string())
+                    changed = True
+    if changed:
+        write_hash_data()
+    return changed
+
+
 def fix_file(uid, fname):
     with open(fname) as f:
         file_content = f.read()
-    message_ctime = get_message_ctime(file_content)
-    if message_ctime:
-        update_file_time(fname, message_ctime)
+    message = email.message_from_string(file_content)
+    message_ctime = fix_file_ctime(fname, message)
 
-    from dobackup import get_filename_by_date
-    archive_path = get_filename_by_date(uid, message_ctime)
-    if not fname.endswith(archive_path):
-        os.renames(fname, archive_path)
+    fname = fix_file_name(uid, fname, message, message_ctime)
+
+    fix_large_duplication(fname, message)
 
 
 def update_file_time(fname, ctime):
@@ -95,6 +150,7 @@ def main():
 
     if emails:
         write_last_file(emails[-1][0])
+        write_hash_data()
 
 if __name__ == '__main__':
     main()
