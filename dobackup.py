@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import imaplib
 import os
@@ -35,8 +36,11 @@ def UIDFromFilename(fname):
 
 
 def get_credentials():
-    user = raw_input("Gmail address: ")
-    pwd = getpass.getpass("Gmail password: ")
+    try:
+        user, pwd = open('account.conf').read().strip().split()
+    except:
+        user = raw_input("Gmail address: ")
+        pwd = getpass.getpass("Gmail password: ")
     return user, pwd
 
 
