@@ -14,8 +14,10 @@ FILE_RE = re.compile(r"(\d+).eml$")
 LAST_DATE_FIXED_FILENAME = "last_email_fixed.dat"
 
 
-def get_message_ctime(d):
-    orig_d = d
+def get_message_ctime(content):
+    message = email.message_from_string(content)
+    ctime = message['date']
+    d = ctime
     dt_src = email.utils.parsedate_tz(d)
     if not dt_src:
         return None
@@ -28,7 +30,7 @@ def get_message_ctime(d):
         dt = datetime.datetime(*dt_src[:6])
     except Exception, e:
         print e
-        print "orig date: %r, curr date: %r, dt_src: %r" % (orig_d, d, dt_src)
+        print "orig date: %r, curr date: %r, dt_src: %r" % (ctime, d, dt_src)
         return None
     if dt_src[-1]:
         dt = dt - datetime.timedelta(seconds=dt_src[-1])
@@ -37,13 +39,16 @@ def get_message_ctime(d):
     return message_ctime
 
 
-def update_file_time(fname):
+def fix_file_ctime(fname):
     with open(fname) as f:
-        file_contents = f.read()
-    message = email.message_from_string(file_contents)
-    message_ctime = get_message_ctime(message['date'])
+        file_content = f.read()
+    message_ctime = get_message_ctime(file_content)
     if message_ctime:
-        os.utime(fname, (message_ctime, message_ctime))
+        update_file_time(fname, message_ctime)
+
+
+def update_file_time(fname, ctime):
+    os.utime(fname, (ctime, ctime))
 
 
 def read_last_file():
@@ -56,9 +61,8 @@ def read_last_file():
 
 
 def write_last_file(last):
-    f = open(LAST_DATE_FIXED_FILENAME, 'w')
-    f.write(str(last))
-    f.close()
+    with open(LAST_DATE_FIXED_FILENAME, 'w') as f:
+        f.write(str(last))
 
 
 def load_file_to_handle(last_file_int_fixed):
@@ -81,7 +85,7 @@ def main():
 
     for i, (file_int, fname) in enumerate(emails):
         print "(%d of %d) %s" % (i + 1, len(emails), fname)
-        update_file_time(fname)
+        fix_file_ctime(fname)
 
     if emails:
         write_last_file(emails[-1][0])
