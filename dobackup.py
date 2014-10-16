@@ -82,12 +82,12 @@ def read_last_id():
 
 
 def do_backup():
-    svr = imaplib.IMAP4_SSL('imap.gmail.com')
-    user, pwd = get_credentials()
     print 'login...'
+    user, pwd = get_credentials()
+    svr = imaplib.IMAP4_SSL('imap.gmail.com')
     svr.login(user, pwd)
 
-    resp, [countstr] = svr.select(GMAIL_FOLDER_NAME, True)
+    resp, [countstr] = svr.select(GMAIL_FOLDER_NAME, readonly=True)
     count = int(countstr)
 
     lastdownloaded = read_last_id()
