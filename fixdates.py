@@ -38,12 +38,17 @@ def get_message_ctime(content):
     return message_ctime
 
 
-def fix_file_ctime(fname):
+def fix_file(uid, fname):
     with open(fname) as f:
         file_content = f.read()
     message_ctime = get_message_ctime(file_content)
     if message_ctime:
         update_file_time(fname, message_ctime)
+
+    from dobackup import get_filename_by_date
+    archive_path = get_filename_by_date(uid, message_ctime)
+    if not fname.endswith(archive_path):
+        os.renames(fname, archive_path)
 
 
 def update_file_time(fname, ctime):
@@ -86,7 +91,7 @@ def main():
 
     for i, (file_int, fname) in enumerate(emails):
         print "(%d of %d) %s" % (i + 1, len(emails), fname)
-        fix_file_ctime(fname)
+        fix_file(file_int, fname)
 
     if emails:
         write_last_file(emails[-1][0])

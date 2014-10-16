@@ -25,6 +25,15 @@ def getUIDForMessage(svr, n):
     return m.group(1)
 
 
+def get_filename_by_date(uid, ctime):
+    localtime = time.localtime(ctime)
+    year = localtime.tm_year
+    month = localtime.tm_mon
+    dir = '%s-%s' % (year, month)
+    fname = '%s/%s.eml' % (dir, uid)
+    return fname
+
+
 def downloadMessage(svr, n, uid):
     resp, lst = svr.fetch(n, '(RFC822)')
     if resp != 'OK':
@@ -32,13 +41,10 @@ def downloadMessage(svr, n, uid):
     content = lst[0][1]
 
     ctime = get_message_ctime(content)
-    localtime = time.localtime(ctime)
-    year = localtime.tm_year
-    month = localtime.tm_mon
-    dir = '%s-%s' % (year, month)
-    fname = '%s/%s.eml' % (dir, uid)
+    fname = get_filename_by_date(ctime)
+    dir = os.path.dirname(fname)
     if not os.path.exists(dir):
-        os.mkdir(dir)
+        os.makedirs(dir)
 
     with open(fname, 'w') as f:
         f.write(content)
