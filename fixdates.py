@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re
-import os
+import calendar
+import datetime
 import email
 import email.utils
-import datetime
+import os
+import re
 import time
-import calendar
-
 
 FILE_RE = re.compile(r"(\d+).eml$")
 LAST_DATE_FIXED_FILENAME = "last_email_fixed.dat"

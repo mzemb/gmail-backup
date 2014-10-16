@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import getpass
 import imaplib
 import os
-import getpass
 import re
+import time
 
+from fixdates import get_message_ctime, update_file_time
+
+LAST_ID_FILE = 'last_fetched_id.dat'
 
 UID_RE = re.compile(r"\d+\s+\(UID (\d+)\)$")
 FILE_RE = re.compile(r"(\d+).eml$")
@@ -16,17 +20,30 @@ def getUIDForMessage(svr, n):
     m = UID_RE.match(lst[0])
     if not m:
         raise Exception(
-            "Internal error parsing UID response: %s %s.  Please try again" % (resp, lst))
+            "Internal error parsing UID response: %s %s.  Please try again" % (
+                resp, lst))
     return m.group(1)
 
 
-def downloadMessage(svr, n, fname):
+def downloadMessage(svr, n, uid):
     resp, lst = svr.fetch(n, '(RFC822)')
     if resp != 'OK':
         raise Exception("Bad response: %s %s" % (resp, lst))
-    f = open(fname, 'w')
-    f.write(lst[0][1])
-    f.close()
+    content = lst[0][1]
+
+    ctime = get_message_ctime(content)
+    localtime = time.localtime(ctime)
+    year = localtime.tm_year
+    month = localtime.tm_mon
+    dir = '%s-%s' % (year, month)
+    fname = '%s/%s.eml' % (dir, uid)
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+
+    with open(fname, 'w') as f:
+        f.write(content)
+    if ctime:
+        update_file_time(fname, ctime)
 
 
 def UIDFromFilename(fname):
@@ -44,17 +61,28 @@ def get_credentials():
     return user, pwd
 
 
+def write_last_id(uid):
+    with open(LAST_ID_FILE, 'w') as f:
+        f.write(str(uid))
+
+
+def read_last_id():
+    try:
+        return open(LAST_ID_FILE).read().strip()
+    except:
+        return 0
+
+
 def do_backup():
     svr = imaplib.IMAP4_SSL('imap.gmail.com')
     user, pwd = get_credentials()
+    print 'login...'
     svr.login(user, pwd)
 
     resp, [countstr] = svr.select(GMAIL_FOLDER_NAME, True)
     count = int(countstr)
 
-    existing_files = os.listdir(".")
-    lastdownloaded = max(UIDFromFilename(f)
-                         for f in existing_files) if existing_files else 0
+    lastdownloaded = read_last_id()
 
     # A simple binary search to see where we left off
     gotten, ungotten = 0, count + 1
@@ -62,17 +90,20 @@ def do_backup():
         attempt = (gotten + ungotten) / 2
         uid = getUIDForMessage(svr, attempt)
         if int(uid) <= lastdownloaded:
-            print "Finding starting point: %d/%d (UID: %s) too low" % (attempt, count, uid)
+            print "Finding starting point: %d/%d (UID: %s) too low" % (
+                attempt, count, uid)
             gotten = attempt
         else:
-            print "Finding starting point: %d/%d (UID: %s) too high" % (attempt, count, uid)
+            print "Finding starting point: %d/%d (UID: %s) too high" % (
+                attempt, count, uid)
             ungotten = attempt
 
     # The download loop
     for i in range(ungotten, count + 1):
         uid = getUIDForMessage(svr, i)
         print "Downloading %d/%d (UID: %s)" % (i, count, uid)
-        downloadMessage(svr, i, uid + '.eml')
+        downloadMessage(svr, i, uid)
+        write_last_id(uid)
 
     svr.close()
     svr.logout()
