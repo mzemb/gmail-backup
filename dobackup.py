@@ -6,7 +6,7 @@ import os
 import re
 import time
 
-from fixdates import get_message_ctime, update_file_time
+from fix import get_message_ctime, update_file_time
 
 LAST_ID_FILE = 'last_fetched_id.dat'
 
@@ -41,7 +41,7 @@ def downloadMessage(svr, n, uid):
     content = lst[0][1]
 
     ctime = get_message_ctime(content)
-    fname = get_filename_by_date(ctime)
+    fname = get_filename_by_date(uid, ctime)
     dir = os.path.dirname(fname)
     if not os.path.exists(dir):
         os.makedirs(dir)
