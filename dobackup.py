@@ -29,7 +29,7 @@ def get_filename_by_date(uid, ctime):
     localtime = time.localtime(ctime)
     year = localtime.tm_year
     month = localtime.tm_mon
-    dir = '%s-%s' % (year, month)
+    dir = '%s-%02d' % (year, month)
     fname = '%s/%s.eml' % (dir, uid)
     return fname
 
