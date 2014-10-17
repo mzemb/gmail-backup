@@ -7,7 +7,7 @@ import os
 import re
 import time
 
-from fix import fix_large_duplication, get_message_ctime, update_file_time, \
+from fix import fix_large_duplication, get_message_ctime, update_file_mtime, \
     write_hash_data
 
 LAST_ID_FILE = 'last_fetched_id.dat'
@@ -51,10 +51,10 @@ def downloadMessage(svr, n, uid):
 
     with open(fname, 'w') as f:
         f.write(content)
-    if ctime:
-        update_file_time(fname, ctime)
 
     fix_large_duplication(fname, message)
+
+    update_file_mtime(fname, ctime)
 
 
 def UIDFromFilename(fname):

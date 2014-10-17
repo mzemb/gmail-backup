@@ -41,11 +41,10 @@ def get_message_ctime(message):
     return message_ctime
 
 
-def fix_file_ctime(fname, message):
-    message_ctime = get_message_ctime(message)
-    if message_ctime:
-        update_file_time(fname, message_ctime)
-    return message_ctime
+def fix_file_time(fname, message):
+    ctime = get_message_ctime(message)
+    update_file_mtime(fname, ctime)
+    return ctime
 
 
 def fix_file_name(uid, fname, message, ctime):
@@ -99,15 +98,19 @@ def fix_file(uid, fname):
     with open(fname) as f:
         file_content = f.read()
     message = email.message_from_string(file_content)
-    message_ctime = fix_file_ctime(fname, message)
+    message_ctime = get_message_ctime(message)
 
     fname = fix_file_name(uid, fname, message, message_ctime)
 
     fix_large_duplication(fname, message)
 
+    fix_file_time(fname, message)
 
-def update_file_time(fname, ctime):
-    os.utime(fname, (ctime, ctime))
+
+def update_file_mtime(fname, mtime):
+    if mtime and os.stat(fname).st_mtime != mtime:
+        atime = mtime
+        os.utime(fname, (atime, mtime))
 
 
 def read_last_file():
