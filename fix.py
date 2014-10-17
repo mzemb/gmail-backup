@@ -13,7 +13,7 @@ import time
 FILE_RE = re.compile(r"(\d+).eml$")
 LAST_DATE_FIXED_FILENAME = "last_email_fixed.dat"
 LARGE_FILE_SIZE = 100000  # 100K
-LAST_HASH_FILENAME = "last_hash.dat"
+LAST_HASH_FILENAME = "last.hash"
 SEEN_HASH = {}
 
 
@@ -59,7 +59,7 @@ def fix_file_name(uid, fname, message, ctime):
 def read_hash_data():
     try:
         content = open(LAST_HASH_FILENAME).read()
-        return {line.split(1) for line in content.split('\n')}
+        return dict(line.split(' ', 1) for line in content.split('\n'))
     except:
         return {}
 
@@ -74,16 +74,17 @@ def write_hash_data():
 
 def fix_large_duplication(fname, message):
     changed = False
+    path = os.path.normpath(fname)
     for part in message.walk():
         if part.get_filename():
             content = part.get_payload()
             size = len(content)
             if size > LARGE_FILE_SIZE:
                 hash = hashlib.md5(content).hexdigest()
-                if hash not in SEEN_HASH:
-                    SEEN_HASH[hash] = fname
-                else:
-                    origin_file = SEEN_HASH[hash]
+                origin_file = SEEN_HASH.get(hash)
+                if not origin_file:
+                    SEEN_HASH[hash] = path
+                elif origin_file != path:
                     part.set_payload('duplication removed, origin: %s' %
                                      origin_file)
                     with open(fname, 'w') as f:
