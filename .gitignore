@@ -5,4 +5,5 @@
 *.pyc
 *.conf
 *.dat
+*.hash
 20*
