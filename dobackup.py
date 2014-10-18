@@ -81,7 +81,7 @@ def write_last_id(uid):
 
 def read_last_id():
     try:
-        return open(LAST_ID_FILE).read().strip()
+        return int(open(LAST_ID_FILE).read().strip())
     except:
         return 0
 
