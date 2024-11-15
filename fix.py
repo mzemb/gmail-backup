@@ -30,9 +30,9 @@ def get_message_ctime(message):
             dt_src = email.utils.parsedate_tz(d)
     try:
         dt = datetime.datetime(*dt_src[:6])
-    except Exception, e:
-        print e
-        print "orig date: %r, curr date: %r, dt_src: %r" % (ctime, d, dt_src)
+    except Exception as e:
+        print(e)
+        print("orig date: %r, curr date: %r, dt_src: %r" % (ctime, d, dt_src))
         return None
     if dt_src[-1]:
         dt = dt - datetime.timedelta(seconds=dt_src[-1])
@@ -96,7 +96,7 @@ def fix_large_duplication(fname, message):
 
 
 def fix_file(uid, fname):
-    with open(fname) as f:
+    with open(fname, encoding='utf-8') as f:
         file_content = f.read()
     message = email.message_from_string(file_content)
     message_ctime = get_message_ctime(message)
@@ -149,7 +149,7 @@ def main():
     emails = load_file_to_handle(last_file_int_fixed)
 
     for i, (file_int, fname) in enumerate(emails):
-        print "(%d of %d) %s" % (i + 1, len(emails), fname)
+        print("(%d of %d) %s" % (i + 1, len(emails), fname))
         fix_file(file_int, fname)
 
     if emails:
