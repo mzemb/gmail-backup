@@ -80,7 +80,7 @@ def fix_large_duplication(fname, message):
             content = part.get_payload()
             size = len(content)
             if size > LARGE_FILE_SIZE:
-                hash = hashlib.md5(content).hexdigest()
+                hash = hashlib.md5(content.encode()).hexdigest()
                 origin_file = SEEN_HASH.get(hash)
                 if not origin_file:
                     SEEN_HASH[hash] = path

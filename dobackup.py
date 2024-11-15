@@ -24,7 +24,7 @@ def getUIDForMessage(svr, n):
         raise Exception(
             "Internal error parsing UID response: %s %s.  Please try again" % (
                 resp, lst))
-    return m.group(1)
+    return int(m.group(1))
 
 
 def get_filename_by_date(uid, ctime):
