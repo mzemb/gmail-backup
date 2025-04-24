@@ -2,6 +2,10 @@
 ===================
 A simple Python script to download all your mail from Gmail to your local hard drive.
 
+**Forks**
+--------------
+abjennings/gmail-backup > xyb/gmail-backup > mzemb/gmail-backup
+
 **Introduction**
 --------------
 I love Gmail.  But sometimes I worry that all my emails are stored on Google's servers and if they ever
