@@ -8,7 +8,7 @@ import re
 import time
 
 from fix import fix_large_duplication, get_message_ctime, update_file_mtime, \
-    write_hash_data
+    write_hash_data, EMAILS_ENCODING
 
 LAST_ID_FILE = 'last_fetched_id.dat'
 
@@ -43,7 +43,7 @@ def downloadMessage(svr, n, uid):
     content = lst[0][1]
     
     if isinstance(content, bytes):
-        content = content.decode('utf-8')
+        content = content.decode(EMAILS_ENCODING)
     
     message = email.message_from_string(content)
     ctime = get_message_ctime(message)
@@ -52,7 +52,7 @@ def downloadMessage(svr, n, uid):
     if not os.path.exists(dir):
         os.makedirs(dir)
 
-    with open(fname, 'w', encoding='utf-8') as f:
+    with open(fname, 'w', encoding=EMAILS_ENCODING) as f:
         f.write(content)
 
     fix_large_duplication(fname, message)

@@ -10,6 +10,7 @@ import os
 import re
 import time
 
+EMAILS_ENCODING='latin-1'
 FILE_RE = re.compile(r"(\d+).eml$")
 LAST_DATE_FIXED_FILENAME = "last_email_fixed.dat"
 LARGE_FILE_SIZE = 100000  # 100K
@@ -96,7 +97,7 @@ def fix_large_duplication(fname, message):
 
 
 def fix_file(uid, fname):
-    with open(fname, encoding='utf-8') as f:
+    with open(fname, encoding=EMAILS_ENCODING) as f:
         file_content = f.read()
     message = email.message_from_string(file_content)
     message_ctime = get_message_ctime(message)
